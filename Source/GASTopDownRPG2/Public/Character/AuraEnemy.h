@@ -16,6 +16,8 @@ class GASTOPDOWNRPG2_API AAuraEnemy : public AAuraCharacterBase, public IEnemyIn
 	GENERATED_BODY()
 
 public:
+	AAuraEnemy();
+
 	virtual void HighlightActor() override;
 	virtual void UnHighlightActor() override;
 };
