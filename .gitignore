@@ -6,6 +6,7 @@ Build
 Content
 
 .vscode
+.vsconfig
 .idea
 .vs
 *.VC.db
