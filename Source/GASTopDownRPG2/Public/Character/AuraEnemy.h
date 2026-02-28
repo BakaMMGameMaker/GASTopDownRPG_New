@@ -4,14 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "Character/AuraCharacterBase.h"
+#include "Interaction/EnemyInterface.h"
 #include "AuraEnemy.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class GASTOPDOWNRPG2_API AAuraEnemy : public AAuraCharacterBase
+class GASTOPDOWNRPG2_API AAuraEnemy : public AAuraCharacterBase, public IEnemyInterface
 {
 	GENERATED_BODY()
-	
+
+public:
+	virtual void HighlightActor() override;
+	virtual void UnHighlightActor() override;
 };
