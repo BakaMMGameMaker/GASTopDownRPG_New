@@ -68,6 +68,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Applied Effects")
 	TArray<FAuraGameplayEffect> AppliedGameplayEffects;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Applied Effects")
+	float ActorLevel = 1.f;
+
 private:
 	// WeakPtr 而非裸指针，防止效果应用期间 Actor 被销毁导致野指针
 	TMap<TWeakObjectPtr<UAbilitySystemComponent>, TArray<FActiveGameplayEffectHandle>> ActiveEffectHandles;
