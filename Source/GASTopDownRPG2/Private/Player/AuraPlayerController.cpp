@@ -26,8 +26,8 @@ void AAuraPlayerController::BeginPlay()
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(
 		GetLocalPlayer());
-	check(Subsystem);
-	Subsystem->AddMappingContext(AuraContext, 0);
+
+	if (Subsystem) Subsystem->AddMappingContext(AuraContext, 0); // 只有服务器和本地玩家才能拿到指针
 
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
