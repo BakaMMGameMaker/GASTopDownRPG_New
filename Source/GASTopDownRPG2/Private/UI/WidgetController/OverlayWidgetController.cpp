@@ -6,6 +6,11 @@
 #include "AbilitySystem/AuraAbilitySystemComponent.h"
 #include "AbilitySystem/AuraAttributeSet.h"
 
+UOverlayWidgetController::UOverlayWidgetController()
+{
+	MessageTag = FGameplayTag::RequestGameplayTag(TEXT("Message"));
+}
+
 // 广播给 Widgets
 void UOverlayWidgetController::BroadcastInitialValues()
 {
@@ -28,46 +33,64 @@ void UOverlayWidgetController::BindCallbacksToDependencies()
 
 	// 监听 Model 中的数值变化，GAS 内置的属性变化广播系统
 	// 与头文件中的自定义 delegates 不是一回事
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetHealthAttribute())
-	                      .AddUObject(this, &UOverlayWidgetController::HealthChanged);
+	HealthDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+		                                             AuraAttributeSet->GetHealthAttribute())
+	                                             .AddWeakLambda(this, [this](const FOnAttributeChangeData& Data) {
+		                                             OnHealthChanged.Broadcast(Data.NewValue);
+	                                             });
 
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetMaxHealthAttribute())
-	                      .AddUObject(this, &UOverlayWidgetController::MaxHealthChanged);
+	MaxHealthDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+		                                                AuraAttributeSet->GetMaxHealthAttribute())
+	                                                .AddWeakLambda(this, [this](const FOnAttributeChangeData& Data) {
+		                                                OnMaxHealthChanged.Broadcast(Data.NewValue);
+	                                                });
 
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetManaAttribute())
-	                      .AddUObject(this, &UOverlayWidgetController::ManaChanged);
+	ManaDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+		                                           AuraAttributeSet->GetManaAttribute())
+	                                           .AddWeakLambda(this, [this](const FOnAttributeChangeData& Data) {
+		                                           OnManaChanged.Broadcast(Data.NewValue);
+	                                           });
 
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetMaxManaAttribute())
-	                      .AddUObject(this, &UOverlayWidgetController::MaxManaChanged);
+	MaxManaDelegateHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+		                                              AuraAttributeSet->GetMaxManaAttribute())
+	                                              .AddWeakLambda(this, [this](const FOnAttributeChangeData& Data) {
+		                                              OnMaxManaChanged.Broadcast(Data.NewValue);
+	                                              });
 
-	Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->EffectAssetTags.AddLambda(
-		[this](const FGameplayTagContainer& AssetTags)
-		{
+	MessageDelegateHandle = Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->EffectAssetTags.AddWeakLambda(
+		this,
+		[this](const FGameplayTagContainer& AssetTags) {
 			for (const FGameplayTag& Tag : AssetTags)
 			{
-				FUIWidgetRow* Row = GetDataTableRowByTag<FUIWidgetRow>(MessageWidgetDataTable, Tag);
+				if (Tag.MatchesTag(MessageTag))
+				{
+					const FUIWidgetRow* Row = GetDataTableRowByTag<FUIWidgetRow>(MessageWidgetDataTable, Tag);
+					if (!Row) continue;
+					MessageWidgetRow.Broadcast(*Row);
+				}
 			}
 		}
 	);
 }
 
-// 收到来自 GAS 的生命变化通知时，把变化广播以传递给小组件
-void UOverlayWidgetController::HealthChanged(const FOnAttributeChangeData& Data) const
+void UOverlayWidgetController::BeginDestroy()
 {
-	OnHealthChanged.Broadcast(Data.NewValue);
-}
+	// 解绑对 Delegates 的监听，防止僵尸委托累积
+	if (IsValid(AbilitySystemComponent))
+	{
+		if (const UAuraAttributeSet* AuraAttributeSet = Cast<UAuraAttributeSet>(AttributeSet))
+		{
+			AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetHealthAttribute()).
+			                        Remove(HealthDelegateHandle);
+			AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetMaxHealthAttribute()).
+			                        Remove(MaxHealthDelegateHandle);
+			AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetManaAttribute()).
+			                        Remove(ManaDelegateHandle);
+			AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AuraAttributeSet->GetMaxManaAttribute()).
+			                        Remove(MaxManaDelegateHandle);
+		}
+		Cast<UAuraAbilitySystemComponent>(AbilitySystemComponent)->EffectAssetTags.Remove(MessageDelegateHandle);
+	}
 
-void UOverlayWidgetController::MaxHealthChanged(const FOnAttributeChangeData& Data) const
-{
-	OnMaxHealthChanged.Broadcast(Data.NewValue);
-}
-
-void UOverlayWidgetController::ManaChanged(const FOnAttributeChangeData& Data) const
-{
-	OnManaChanged.Broadcast(Data.NewValue);
-}
-
-void UOverlayWidgetController::MaxManaChanged(const FOnAttributeChangeData& Data) const
-{
-	OnMaxManaChanged.Broadcast(Data.NewValue);
+	Super::BeginDestroy();
 }

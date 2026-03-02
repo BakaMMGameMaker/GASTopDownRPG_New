@@ -18,3 +18,8 @@ void UAuraWidgetController::BroadcastInitialValues()
 void UAuraWidgetController::BindCallbacksToDependencies()
 {
 }
+
+void UAuraWidgetController::BeginDestroy()
+{
+	UObject::BeginDestroy();
+}

@@ -48,6 +48,7 @@ public:
 
 	virtual void BroadcastInitialValues();
 	virtual void BindCallbacksToDependencies();
+	virtual void BeginDestroy() override;
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetContrller")
