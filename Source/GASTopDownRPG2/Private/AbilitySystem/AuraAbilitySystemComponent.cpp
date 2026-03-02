@@ -12,4 +12,8 @@ void UAuraAbilitySystemComponent::EffectApplied(UAbilitySystemComponent* Ability
                                                 const FGameplayEffectSpec& EffectSpec,
                                                 FActiveGameplayEffectHandle ActiveEffectHandle)
 {
+	FGameplayTagContainer TagContainer;
+	EffectSpec.GetAllAssetTags(TagContainer);
+
+	EffectAssetTags.Broadcast(TagContainer); // 广播资产标签给 Widget Controller 用于显示文字
 }
